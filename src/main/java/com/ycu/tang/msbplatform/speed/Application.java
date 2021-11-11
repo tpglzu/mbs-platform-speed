@@ -28,11 +28,14 @@ public class Application {
     data.add(makePageview(1, "http://foo.com/post2", 4000));
     data.add(makePageview(1, "http://foo.com/post2", 10000));
     data.add(makePageview(5, "http://foo.com/post3", 10600));
+    data.add(makePageview(8, "http://foo.com/post8", 10600));
+    data.add(makePageview(3, "http://foo.com/post8", 10600));
+    data.add(makePageview(2, "http://foo.com/post8", 10600));
 
     Properties props = new Properties();
 
     //Assign localhost id
-    props.put("bootstrap.servers", "localhost:9092");
+    props.put("bootstrap.servers", com.ycu.tang.msbplatform.speed.Properties.getInstance().getKafkaUrl());
 
     //Set acknowledgements for producer requests.
     props.put("acks", "all");
@@ -60,7 +63,7 @@ public class Application {
     TSerializer ser = new TSerializer();
 
     for (Data d : data) {
-      producer.send(new ProducerRecord("pageviews", ser.serialize(d)));
+      producer.send(new ProducerRecord("page_views", ser.serialize(d)));
     }
 
     producer.close();

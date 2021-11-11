@@ -5,6 +5,8 @@ import com.ycu.tang.msbplatform.speed.bolt.ExtractFilterBolt;
 import com.ycu.tang.msbplatform.speed.bolt.UpdateMongoBolt;
 import com.ycu.tang.msbplatform.speed.deserializer.PageviewDeserializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.storm.Config;
+import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.kafka.spout.ByTopicRecordTranslator;
 import org.apache.storm.kafka.spout.KafkaSpout;
@@ -17,7 +19,7 @@ import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.EARLIEST;
 public class UniqueViewTopology {
   private static final String TOPIC_0_1_STREAM = "test_0_1_stream";
 
-  protected Properties properties = new Properties();
+  protected Properties properties = Properties.getInstance();
 
   public StormTopology create(){
     TopologyBuilder builder = new TopologyBuilder();
@@ -37,10 +39,27 @@ public class UniqueViewTopology {
     builder.setBolt("extract-filter",
             new ExtractFilterBolt(), 4)
             .shuffleGrouping("pageviews", TOPIC_0_1_STREAM);
-    builder.setBolt("mongodb",
-            new UpdateMongoBolt(properties.getDbUrl(), properties.getDbColUniqueView()), 4)
+    builder.setBolt("mongodb0",
+            new UpdateMongoBolt(properties.getDbUrl(), properties.getDbColUniqueView()+"_0"), 4)
+            .fieldsGrouping("extract-filter",
+                    new Fields("domain"));
+    builder.setBolt("mongodb1",
+            new UpdateMongoBolt(properties.getDbUrl(), properties.getDbColUniqueView()+"_1"), 4)
             .fieldsGrouping("extract-filter",
                     new Fields("domain"));
     return builder.createTopology();
   }
+
+  protected void runMain(String[] args) throws Exception {
+    Config conf = new Config();
+    conf.setNumWorkers(20);
+    conf.setMaxSpoutPending(5000);
+    conf.setFallBackOnJavaSerialization(true);
+    StormSubmitter.submitTopology("mytopology", conf, create());
+  }
+
+  public static void main(String[] args) throws Exception {
+    new UniqueViewTopology().runMain(args);
+  }
+
 }

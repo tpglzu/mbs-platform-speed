@@ -2,7 +2,21 @@ package com.ycu.tang.msbplatform.speed;
 
 public class Properties {
 
-  ApplicationProperties ap = new ApplicationProperties();
+  private static Properties instance = null;
+  ApplicationProperties ap;
+
+  private Properties(){
+    ap = new ApplicationProperties();
+  }
+
+  public static Properties getInstance() {
+    if(instance == null) {
+      instance = new Properties();
+    }
+    return instance;
+  }
+
+
 
   public String getKafkaUrl() {
     return ap.readProperty("kafka.url");

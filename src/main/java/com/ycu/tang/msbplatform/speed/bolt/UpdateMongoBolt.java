@@ -14,8 +14,12 @@ import org.apache.storm.utils.TupleUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UpdateMongoBolt extends AbstractMongoBolt {
+
+  public static final Logger LOG = LoggerFactory.getLogger(UpdateMongoBolt.class);
 
   private QueryFilterCreator queryCreator;
   private MongoUpdateMapper mapper;
@@ -29,7 +33,12 @@ public class UpdateMongoBolt extends AbstractMongoBolt {
   @Override
   public void execute(Tuple tuple) {
 
+    LOG.info("Good Luck. " + tuple.toString());
+
+    LOG.info("execute isTick. " + !TupleUtils.isTick(tuple));
+
     if (!TupleUtils.isTick(tuple)) {
+      LOG.info("execute start. ");
       try {
         String url = tuple.getString(1);
         int bucket = tuple.getInteger(2);
@@ -53,9 +62,14 @@ public class UpdateMongoBolt extends AbstractMongoBolt {
         newDoc.put("bucket", bucket);
         newDoc.put("granularity", "d");
 
+        LOG.info("execute 1. ");
+
         this.mongoClient.update(filter, new Document("$set", newDoc), true, false);
+        LOG.info("execute update. ");
         this.collector.ack(tuple);
+        LOG.info("execute tuple. ");
       } catch (Exception var4) {
+        LOG.error("Exception", var4);
         this.collector.reportError(var4);
         this.collector.fail(tuple);
       }
